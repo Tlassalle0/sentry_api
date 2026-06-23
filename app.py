@@ -141,21 +141,10 @@ product_response_model = api.model("ProductResponse", {
 })
 
 
-@api.route("/")
-# On crée une route à la racine de l’API.
-
-class Home(Resource):
-    # Resource indique que cette classe représente une ressource API.
-
-    def get(self):
-        # Cette méthode répond aux requêtes GET sur /.
-
-        return {
-            "message": "API Python connectée à MySQL avec Swagger"
-        }
-        # On retourne un dictionnaire Python.
-        # Flask-RESTX le transforme automatiquement en JSON.
-
+@app.route("/")
+def hello_world():
+    1/0  # raises an error
+    return "<p>Hello, World!</p>"
 
 @product_namespace.route("")
 # On crée la route /products dans le namespace products.

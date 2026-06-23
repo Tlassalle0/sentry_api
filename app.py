@@ -9,6 +9,8 @@ from flask_restx import Api, Resource, fields
 # Resource permet de créer des classes de routes API.
 # fields permet de décrire les champs JSON visibles dans Swagger.
 
+import sentry_sdk
+
 from crud_product import (
     get_all_products,
     # Fonction qui retourne tous les produits depuis MySQL.
@@ -60,7 +62,12 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 # On attache le handler au logger.
 
-
+sentry_sdk.init(
+    dsn="https://c615b0d3953b06723c631432d1dc3b60@o4511615126208512.ingest.de.sentry.io/4511615161335888",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+)
 
 app = Flask(__name__)
 # On crée l’application Flask principale.

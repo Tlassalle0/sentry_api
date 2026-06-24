@@ -141,7 +141,7 @@ product_response_model = api.model("ProductResponse", {
 })
 
 
-@app.route("/")
+@app.route("/error")
 def hello_world():
     1/0  # raises an error
     return "<p>Hello, World!</p>"

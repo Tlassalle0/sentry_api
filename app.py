@@ -147,7 +147,7 @@ def hello_world():
     return "<p>Hello, World!</p>"
 
 @app.route("/health")
-def hello_world():
+def health():
     return "<p>Healthy</p>"
 
 @product_namespace.route("")

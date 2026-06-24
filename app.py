@@ -146,6 +146,10 @@ def hello_world():
     1/0  # raises an error
     return "<p>Hello, World!</p>"
 
+@app.route("/health")
+def hello_world():
+    return "<p>Healthy</p>"
+
 @product_namespace.route("")
 # On crée la route /products dans le namespace products.
 

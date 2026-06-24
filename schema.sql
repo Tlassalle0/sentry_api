@@ -5,3 +5,8 @@ CREATE TABLE IF NOT EXISTS products (
     stock INT          NOT NULL,
     PRIMARY KEY (id)
 );
+
+INSERT INTO products (nom, prix, stock) VALUES
+    ('Clavier', 49.99, 10),
+    ('Souris', 29.99, 25),
+    ('Écran', 199.99, 5);

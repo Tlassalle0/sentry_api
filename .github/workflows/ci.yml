@@ -1,0 +1,104 @@
+name: Test GET /products route
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: products_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {1..10}; do
+            mysqladmin ping -h 127.0.0.1 -u root -proot --silent && break
+            echo "Waiting for MySQL... ($i)"
+            sleep 3
+          done
+
+      - name: Initialize database schema
+        run: |
+          mysql -h 127.0.0.1 -u root -proot products_db < schema.sql
+        # Expects a schema.sql at the root of your repo that creates the products table.
+
+      - name: Start Flask app
+        env:
+          FLASK_ENV: testing
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: products_db
+        run: |
+          python app.py &
+          sleep 3
+        # Starts the Flask server in the background and waits for it to be ready.
+
+      - name: Test GET /products returns 200
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5000/products)
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" -ne 200 ]; then
+            echo "❌ GET /products returned $STATUS, expected 200"
+            exit 1
+          fi
+          echo "✅ GET /products returned 200"
+
+      - name: Test GET /products returns valid JSON array
+        run: |
+          BODY=$(curl -s http://127.0.0.1:5000/products)
+          echo "Response body: $BODY"
+          echo "$BODY" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          assert isinstance(data, list), f'Expected a list, got {type(data).__name__}'
+          print('✅ Response is a valid JSON array')
+          "
+
+      - name: Test GET /products items have expected fields
+        run: |
+          curl -s -X POST http://127.0.0.1:5000/products \
+            -H "Content-Type: application/json" \
+            -d '{"nom": "Test Produit", "prix": 9.99, "stock": 5}'
+
+          BODY=$(curl -s http://127.0.0.1:5000/products)
+          echo "$BODY" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          required_keys = {'id', 'nom', 'prix', 'stock'}
+          for item in data:
+              missing = required_keys - item.keys()
+              assert not missing, f'Missing fields: {missing}'
+          print('✅ All items contain required fields: id, nom, prix, stock')
+          "
